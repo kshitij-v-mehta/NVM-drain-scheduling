@@ -9,9 +9,20 @@
 /* Total no. of simulation ranks that you must track */
 static int num_ranks;
 
+/* Line of the L1, L2 (and presumably L3) caches on Summit */
+int cache_line_size = 128;
+
+/* Size of the shared memory segment that will be allocated.
+ * shmsize = num_ranks * cache_line_size
+ * to avoid false sharing between threads. */
+static int shmsize;
+
+/* A unique ID to represent the shm key. */
+static int shmkey = 915;
+
 static int  _shmid;
 static int* _shm_ptr;
-static int shmkey = 915;
+
 
 /*
  * Returns the no. of ranks that have reported their status as GREEN -
@@ -20,7 +31,7 @@ static int shmkey = 915;
 int shm_get_green() {
     int i, ngreen = 0;
     for(i=0; i<num_ranks; i++) {
-        if(_shm_ptr[i] == GREEN)
+        if(_shm_ptr[i*cache_line_size] == GREEN)
             ngreen++;
     }
 
@@ -34,7 +45,7 @@ int shm_get_green() {
 int shm_get_red() {
     int i, nred = 0;
     for(i=0; i<num_ranks; i++) {
-        if(_shm_ptr[i] == RED)
+        if(_shm_ptr[i*cache_line_size] == RED)
             nred++;
     }
 
@@ -47,9 +58,10 @@ int shm_get_red() {
  */
 int shm_init(int n) {
     num_ranks = n;
+    shmsize = num_ranks * cache_line_size;
 
     // Create the shm segment
-    _shmid = shmget(shmkey, num_ranks, IPC_CREAT|0666);
+    _shmid = shmget(shmkey, shmsize, IPC_CREAT|0666);
     if (_shmid < 0) {
         perror("shmget");
         return SHMGET_ERROR;
