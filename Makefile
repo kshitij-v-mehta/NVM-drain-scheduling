@@ -1,7 +1,7 @@
 all: drainer
 
-drainer: main.o monitor.o copier.o shm.o utils.o file_utils.o
-	mpicc -fopenmp main.o utils.o file_utils.o monitor.o copier.o shm.o -o drainer
+drainer: main.o monitor.o copier.o shm.o utils.o file_utils.o mpi_utils.o
+	mpicc -fopenmp main.o utils.o file_utils.o mpi_utils.o monitor.o copier.o shm.o -o drainer
 
 monitor.o : monitor.c shm.o
 	mpicc -c monitor.c
@@ -20,6 +20,9 @@ utils.o : utils.c
 
 file_utils.o : file_utils.c
 	mpicc -c file_utils.c
+
+mpi_utils.o : mpi_utils.c
+	mpicc -c mpi_utils.c
 
 
 .PHONY: all clean run
