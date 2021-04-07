@@ -115,7 +115,7 @@ char** _root_distribute_subfiles(char* adios_fname, int *num_myfiles) {
     
         // Distribute files equally. Remainder files also get distributed
         // equally.
-        n = num_files_on_node/get_lsize() + (num_files_on_node%get_lsize())/i+1;
+        n = num_files_on_node/get_lsize() + (num_files_on_node%get_lsize())/(i+1);
     
         // Rank 0 does not send to itself
         if (i==0) {
