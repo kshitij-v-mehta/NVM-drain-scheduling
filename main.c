@@ -57,8 +57,8 @@ int main(int argc, char **argv) {
 
 /*
  * NEXT STEPS:
- * --- DONE --- Distribute data files on the node amongst ranks on the node.
- * --- DONE ---  Need to sort the data files first, or have the local root distribute them
+ * --- DONE --- Distribute data files on the node amongst ranks on the node
+ * --- DONE --- Local root distributes local data filenames
  * --- DONE --- Maintain a struct for the offset of each local subfile
  * Start mainloop that copies data.
  * Put all input args in a config file

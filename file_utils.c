@@ -81,12 +81,16 @@ static char** _allocate_subfiles(int n) {
 static char** _get_data_files(char *adios_fname, int *num_files) {
     int i;
     char** subfiles = NULL;
- 
+    char fullpath[128] = {0};
+
+    strcpy(fullpath, ssd_prefix);
+    strcat(fullpath, adios_fname);
+
     // malloc subfiles array
     subfiles = _allocate_subfiles(40);   
 
     // Get list of data files on the node.
-    _dirlist(adios_fname, subfiles, num_files);
+    _dirlist(fullpath, subfiles, num_files);
 
     if (*num_files == 0) {
         fprintf(stderr, "Could not find any subfiles on node. ABORTING.\n");
@@ -176,7 +180,7 @@ int _create_subft_entry(subf_t* t, char* datafilename, char* adiosfname) {
     strcat(infname, adiosfname);
     strcat(infname, "/");
     strcat(infname, datafilename);
-    memset(t->fname_ssd, 0, 128);
+    memset((char*)t->fname_ssd, 0, 128);
     strcpy(t->fname_ssd, infname);
 
     // Set the output pfs fname
@@ -186,6 +190,8 @@ int _create_subft_entry(subf_t* t, char* datafilename, char* adiosfname) {
     strcat(outfname, datafilename);
     memset(t->fname_pfs, 0, 128);
     strcpy(t->fname_pfs, outfname);
+
+    fprintf(stdout, "%d/%d opening %s\n", get_lrank(), get_grank(), infname);
 
     // Open file on ssd for reading
     if(-1 == (t->fd_in = open(infname, O_RDONLY, 0644))) {
@@ -231,7 +237,7 @@ int _form_subfile_t(char* adiosfname, subf_t** mysubfiles,
     }
     
     for(i=0; i<num_myfiles; i++)
-        _create_subft_entry(mysubfiles[i], subfilenames[i], adiosfname);
+        _create_subft_entry(&(*mysubfiles)[i], subfilenames[i], adiosfname);
 
     // free subfilenames
     for(i=0; i<num_myfiles; i++)
