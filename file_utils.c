@@ -8,6 +8,7 @@
 #include <mpi.h>
 #include "file_utils.h"
 #include "mpi_utils.h"
+#include "logger.h"
 
 //TODO
 static char* ssd_prefix="./mnt/bb/kmehta/";
@@ -128,6 +129,8 @@ char** _root_distribute_subfiles(char* adios_fname, int *num_myfiles) {
             for (j=0; j<*num_myfiles; j++)
                 strcpy(subfiles[j], allsubfiles[j]);
             startindex += n;
+
+            log_info("%d num subfiles assigned\n", *num_myfiles);
             continue;
         }
     
@@ -163,6 +166,7 @@ char** _recv_subfiles(int *num_myfiles) {
     for(i=0; i<*num_myfiles; i++)
         MPI_Recv(subfiles[i], 32, MPI_CHAR, 0, 0, get_lcomm(), &status);
 
+    log_info("%d num files assigned\n", *num_myfiles);
     return subfiles;
 }
 
@@ -191,7 +195,7 @@ int _create_subft_entry(subf_t* t, char* datafilename, char* adiosfname) {
     memset(t->fname_pfs, 0, 128);
     strcpy(t->fname_pfs, outfname);
 
-    fprintf(stdout, "%d/%d opening %s\n", get_lrank(), get_grank(), infname);
+    log_info("opening %s\n", infname);
 
     // Open file on ssd for reading
     if(-1 == (t->fd_in = open(infname, O_RDONLY, 0644))) {

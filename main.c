@@ -22,11 +22,15 @@ static int      num_threads;        // no. of threads in each drainer process
 
 
 int _mainloop() {
-    //TODO
-    num_threads = 3;
+
+#pragma omp parallel
+    {
+        if( (get_grank() == 0) && (omp_get_thread_num() == 0) )
+            log_info("Num threads set to %d\n", omp_get_num_threads());
+    }
 
     while(nw_traffic_status() == GREEN) {
-#pragma omp parallel num_threads(num_threads)
+#pragma omp parallel
         {
             copy_step(mysubfiles, num_myfiles, transfersize);
         }

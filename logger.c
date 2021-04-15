@@ -10,7 +10,10 @@
 #define LOG_MSG \
     do {                                                \
         char str[64] = {0};                             \
-        sprintf(str, "Rank %d writing ", get_lrank());  \
+        sprintf(str, "T %02d/%02d Rank %02d/%05d ",          \
+                omp_get_thread_num(),                   \
+                omp_get_num_threads(),                  \
+                get_lrank(), get_grank());              \
         strcat(str,s);                                  \
         va_list args;                                   \
         va_start(args, s);                              \
@@ -34,7 +37,11 @@ void log_init() {
         if (strcmp(s, "DEBUG") == 0) log_level = LEVEL_DEBUG;
         if (strcmp(s, "NONE")  == 0) log_level = LEVEL_NONE;
     }
-    fprintf(stdout, "Log level set to %s\n", log_str[log_level]);
+
+    if (get_grank() == 0) {
+        fprintf(stdout, "Log level set to %s\n", log_str[log_level]);
+        fflush(stdout);
+    }
 }
 
 void log_info(char *s, ...) {
