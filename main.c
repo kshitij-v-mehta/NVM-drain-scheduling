@@ -63,9 +63,10 @@ int main(int argc, char **argv) {
  * --- DONE --- Local root distributes local data filenames
  * --- DONE --- Maintain a struct for the offset of each local subfile
  * --- DONE --- Start mainloop that copies data.
- *  Multiple threads use a work queue to get data
+ * --- WIP  --- Distributes files of a rank amongst its threads
  * Write trigger code
  * Set the num_threads somewhere.
+ * Copy md.idx
  * Put all input args in a config file
  * Add debugging information
  */

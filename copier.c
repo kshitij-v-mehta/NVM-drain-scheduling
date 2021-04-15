@@ -32,29 +32,24 @@ int _copy(int srcfd, int destfd, int transfersize, off_t offset) {
     }
 
     // read data
+    fprintf(stdout, "Reading %d bytes from loc %lu from fd %d\n", 
+            transfersize, (unsigned long) offset, srcfd);
     rstat = _readin(srcfd,  transfersize, offset, buf);
     if (rstat == -1) {
         perror("pread");
-        fprintf(stderr, "%d/%d encountered read error at offset %ld\n",
-                get_lrank(), get_grank(), offset); 
-        fflush(stderr);
-        MPI_Abort(MPI_COMM_WORLD, 1);
-    }
-
-    // write data
-    wstat = _writeout(destfd, transfersize, offset, buf);
-    if (wstat == -1) {
-        perror("pwrite");
-        fprintf(stderr, "%d/%d encountered write error at offset %jd\n",
+        fprintf(stderr, "%d/%d encountered read error at offset %jd\n",
                 get_lrank(), get_grank(), (intmax_t) offset); 
         fflush(stderr);
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
-    // bytes read must be == bytes written
-    if (rstat != wstat) {
-        fprintf(stderr, "%d/%d read %zu bytes but wrote %zu bytes. ABORTING.\n",
-                get_lrank(), get_grank(), rstat, wstat);
+    // write rstat bytes
+    wstat = _writeout(destfd, rstat, offset, buf);
+    if (wstat == -1) {
+        perror("pwrite");
+        fprintf(stderr, "%d/%d encountered write error at offset %jd\n",
+                get_lrank(), get_grank(), (intmax_t) offset); 
+        fflush(stderr);
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
