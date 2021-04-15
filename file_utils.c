@@ -136,7 +136,7 @@ char** _root_distribute_subfiles(char* adios_fname, int *num_myfiles) {
     
         // Send the filenames
         for(j=0; j<n; j++) {
-            MPI_Send(subfiles[startindex++], 32, MPI_CHAR, i, 0, get_lcomm()); 
+            MPI_Send(allsubfiles[startindex++], 32, MPI_CHAR, i, 0, get_lcomm()); 
         }
     }
 
