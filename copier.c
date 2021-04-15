@@ -32,8 +32,8 @@ int _copy(int srcfd, int destfd, int transfersize, off_t offset) {
     }
 
     // read data
-    fprintf(stdout, "Reading %d bytes from loc %lu from fd %d\n", 
-            transfersize, (unsigned long) offset, srcfd);
+    //fprintf(stdout, "Reading %d bytes from loc %lu from fd %d\n", 
+    //        transfersize, (unsigned long) offset, srcfd);
     rstat = _readin(srcfd,  transfersize, offset, buf);
     if (rstat == -1) {
         perror("pread");
@@ -81,8 +81,9 @@ int copy_step(subf_t* subf, int nfp, int transfersize) {
     // Copy leftover files if num files not exactly divisible by num threads
     i = (nfp%num_t)/(t_id+1);
     if(i) {
-        index = n*num_t + i;
-        stat = _copy(subf[i].fd_in, subf[i].fd_out, transfersize, subf[i].offset);
+        index = n*num_t + i-1;
+        stat = _copy(subf[index].fd_in, subf[index].fd_out, transfersize, 
+                subf[index].offset);
         subf[i].offset += stat;
     }
 }
