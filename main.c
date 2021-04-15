@@ -8,6 +8,7 @@
 #include "file_utils.h"
 #include "copier.h"
 #include "mpi_utils.h"
+#include "logger.h"
 
 static int      num_sim_ranks;      // no. of simulation ranks to monitor
 static int      transfersize;       // bytes to copy from ssd->pfs in each call
@@ -22,7 +23,7 @@ static int      num_threads;        // no. of threads in each drainer process
 
 int _mainloop() {
     //TODO
-    num_threads = 2;
+    num_threads = 3;
 
     while(nw_traffic_status() == GREEN) {
 #pragma omp parallel num_threads(num_threads)
@@ -41,6 +42,9 @@ int main(int argc, char **argv) {
     // Read input args
     read_input_args(argc, argv, get_grank(), &num_sim_ranks, &transfersize, 
                     &monpolicy, &monpolicyarg, &ad_fname, &ad_nw);
+ 
+    // Init logging information
+    log_init();
 
     // Initialize traffic monitor
     mon_init(num_sim_ranks, monpolicy, monpolicyarg);
@@ -64,7 +68,8 @@ int main(int argc, char **argv) {
  * --- DONE --- Local root distributes local data filenames
  * --- DONE --- Maintain a struct for the offset of each local subfile
  * --- DONE --- Start mainloop that copies data.
- * --- WIP  --- Distributes files of a rank amongst its threads
+ * --- DONE --- Distributes files of a rank amongst its threads
+ * Threads copy data
  * Write trigger code
  * Set the num_threads somewhere.
  * Copy md.idx
