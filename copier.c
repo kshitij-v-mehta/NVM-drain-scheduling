@@ -5,42 +5,90 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <omp.h>
+#include <mpi.h>
 #include "codes.h"
+#include "file_utils.h"
+#include "mpi_utils.h"
 
 
 static int _readin(int srcfd, int transfersize, off_t offset, void *buf) {
-    if (transfersize != pread(srcfd, buf, transfersize, offset)) {
-        perror("pread error");
-        return PREAD_ERROR;
-    }
-    return 0;
+    return pread(srcfd, buf, transfersize, offset);
 }
 
 static int _writeout(int destfd, int transfersize, off_t offset, void *buf) {
-    if (transfersize != pwrite(destfd, buf, transfersize, offset)) {
-        perror("pread error");
-        return PREAD_ERROR;
-    }
-    return 0;
+    return pwrite(destfd, buf, transfersize, offset);
 }
 
 
 /* Copy transfersize bytes from position offset from srcfd to destfd */
-int copy(int srcfd, int destfd, int transfersize, off_t offset) {
-    int read_status, write_status;
+int _copy(int srcfd, int destfd, int transfersize, off_t offset) {
+    int rstat, wstat;
     void *buf = NULL;
     if (NULL == (buf = malloc(transfersize))) {
         perror("buf malloc");
+        MPI_Abort(MPI_COMM_WORLD, 1);
         return MALLOC_ERROR;
     }
 
-    read_status = _readin(srcfd,  transfersize, offset, buf);
-    if (read_status != 0) return read_status;
+    // read data
+    rstat = _readin(srcfd,  transfersize, offset, buf);
+    if (rstat == -1) {
+        perror("pread");
+        fprintf(stderr, "%d/%d encountered read error at offset %ld\n",
+                get_lrank(), get_grank(), offset); 
+        fflush(stderr);
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
 
-    write_status = _writeout(destfd, transfersize, offset, buf);
-    if (write_status != 0) return write_status;
+    // write data
+    wstat = _writeout(destfd, transfersize, offset, buf);
+    if (wstat == -1) {
+        perror("pwrite");
+        fprintf(stderr, "%d/%d encountered write error at offset %jd\n",
+                get_lrank(), get_grank(), (intmax_t) offset); 
+        fflush(stderr);
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+
+    // bytes read must be == bytes written
+    if (rstat != wstat) {
+        fprintf(stderr, "%d/%d read %zu bytes but wrote %zu bytes. ABORTING.\n",
+                get_lrank(), get_grank(), rstat, wstat);
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
 
     free(buf);
-    return 0;
+    return rstat;
+}
+
+
+/* 
+ * A thread copies one transfersize amount of data from all of its subfiles
+ * This is called from an OpenMP region
+ * nfp: total no. of subfiles for this mpi rank
+ */
+int copy_step(subf_t* subf, int nfp, int transfersize) {
+    int i, n, index, stat;
+    int num_t= omp_get_num_threads();
+    int t_id = omp_get_thread_num();
+
+    // n == how many files initially per thread
+    n = nfp/num_t;
+    index = n*t_id;
+
+    // Copy the first set of files
+    for (i=index; i<(index+n); i++) {
+        stat = _copy(subf[i].fd_in, subf[i].fd_out, transfersize, subf[i].offset);
+        subf[i].offset += stat;
+    }
+
+    // Copy leftover files if num files not exactly divisible by num threads
+    i = (nfp%num_t)/(t_id+1);
+    if(i) {
+        index = n*num_t + i;
+        stat = _copy(subf[i].fd_in, subf[i].fd_out, transfersize, subf[i].offset);
+        subf[i].offset += stat;
+    }
 }
 
