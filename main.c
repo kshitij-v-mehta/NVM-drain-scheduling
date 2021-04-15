@@ -73,10 +73,11 @@ int main(int argc, char **argv) {
  * --- DONE --- Maintain a struct for the offset of each local subfile
  * --- DONE --- Start mainloop that copies data.
  * --- DONE --- Distributes files of a rank amongst its threads
- * Threads copy data
+ * --- DONE --- Threads copy data
+ * --- DONE --- Set the num_threads somewhere.
+ * --- DONE --- Add logger
+ * Debug wrong writing
  * Write trigger code
- * Set the num_threads somewhere.
  * Copy md.idx
  * Put all input args in a config file
- * Add debugging information
  */

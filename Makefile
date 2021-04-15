@@ -33,5 +33,5 @@ clean:
 	rm -f *.o drainer
 
 run:
-	mpirun -np $(n) ./drainer -n 2 -t 1024 -p 0 -s 0 -f equilibrium.bp -w 5
+	DRAINER_LOG_LEVEL=DEBUG OMP_NUM_THREADS=3 mpirun -np $(n) ./drainer -n 2 -t 1024 -p 0 -s 0 -f equilibrium.bp -w 5
 

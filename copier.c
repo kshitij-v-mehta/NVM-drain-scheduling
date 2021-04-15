@@ -10,6 +10,7 @@
 #include "codes.h"
 #include "file_utils.h"
 #include "mpi_utils.h"
+#include "logger.h"
 
 
 static int _readin(int srcfd, int transfersize, off_t offset, void *buf) {
@@ -31,9 +32,6 @@ int _copy(int srcfd, int destfd, int transfersize, off_t offset) {
         return MALLOC_ERROR;
     }
 
-    // read data
-    //fprintf(stdout, "Reading %d bytes from loc %lu from fd %d\n", 
-    //        transfersize, (unsigned long) offset, srcfd);
     rstat = _readin(srcfd,  transfersize, offset, buf);
     if (rstat == -1) {
         perror("pread");
@@ -42,6 +40,9 @@ int _copy(int srcfd, int destfd, int transfersize, off_t offset) {
         fflush(stderr);
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
+    
+    log_debug("read %d bytes from offset %lu from fd %d\n",
+            rstat, offset, srcfd);
 
     // write rstat bytes
     wstat = _writeout(destfd, rstat, offset, buf);
