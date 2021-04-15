@@ -21,6 +21,7 @@ static int      num_threads;        // no. of threads in each drainer process
 
 
 int _mainloop() {
+    //TODO
     num_threads = 2;
 
     while(nw_traffic_status() == GREEN) {
