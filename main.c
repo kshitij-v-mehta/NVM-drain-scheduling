@@ -22,6 +22,13 @@ static int      num_threads;        // no. of threads in each drainer process
 
 
 int _mainloop() {
+    int copy_status[8] = {-1};
+    int allcopied = 0;
+    char *sizemg;
+    int i;
+    int nt;
+    
+    nt = (int)strtol(getenv("OMP_NUM_THREADS"), &sizemg, 10);
 
 #pragma omp parallel
     {
@@ -29,10 +36,21 @@ int _mainloop() {
             log_info("Num threads set to %d\n", omp_get_num_threads());
     }
 
-    while(nw_traffic_status() == GREEN) {
-#pragma omp parallel
+    while( (nw_traffic_status() == GREEN) && (!allcopied)) {
+
+        // Check if all data has been copied. Remove when done debugging.
         {
-            copy_step(mysubfiles, num_myfiles, transfersize);
+        allcopied = 1;
+        for(i=0; i<nt; i++)
+            if (copy_status[i] != 0) allcopied = 0;
+        }
+
+        if (!allcopied) {
+#pragma omp parallel
+            {
+                copy_status[omp_get_thread_num()] = 
+                    copy_step(mysubfiles, num_myfiles, transfersize);
+            }
         }
     }
 }
@@ -77,6 +95,7 @@ int main(int argc, char **argv) {
  * --- DONE --- Set the num_threads somewhere.
  * --- DONE --- Add logger
  * Debug wrong writing
+ * Implement work stealing
  * Write trigger code
  * Copy md.idx
  * Put all input args in a config file

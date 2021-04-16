@@ -7,18 +7,19 @@
 #include "mpi_utils.h"
 
 
-#define LOG_MSG \
+#define LOG_MSG(fp) \
     do {                                                \
         char str[64] = {0};                             \
-        sprintf(str, "T %02d/%02d Rank %02d/%05d ",          \
+        sprintf(str, "T %02d/%02d Rank %02d/%02d/%05d ",\
                 omp_get_thread_num(),                   \
                 omp_get_num_threads(),                  \
-                get_lrank(), get_grank());              \
+                get_lrank(), get_lsize(), get_grank()); \
         strcat(str,s);                                  \
         va_list args;                                   \
         va_start(args, s);                              \
-        vprintf(str, args);                             \
+        vfprintf(fp, str, args);                             \
         va_end(args);                                   \
+        fflush(stdout);                                 \
     } while(0);
 
 
@@ -46,11 +47,15 @@ void log_init() {
 
 void log_info(char *s, ...) {
     if (log_level < LEVEL_INFO) return;
-    LOG_MSG
+    LOG_MSG(stdout)
 }
 
 void log_debug(char *s, ...) {
     if (log_level < LEVEL_DEBUG) return;
-    LOG_MSG
+    LOG_MSG(stdout)
+}
+
+void log_error(char *s, ...) {
+    LOG_MSG(stderr)
 }
 

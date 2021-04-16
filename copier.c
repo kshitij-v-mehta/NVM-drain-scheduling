@@ -65,7 +65,7 @@ int _copy(int srcfd, int destfd, int transfersize, off_t offset) {
  * nfp: total no. of subfiles for this mpi rank
  */
 int copy_step(subf_t* subf, int nfp, int transfersize) {
-    int i, n, index, stat;
+    int i, n, index, stat=0;
     int num_t= omp_get_num_threads();
     int t_id = omp_get_thread_num();
 
@@ -87,5 +87,7 @@ int copy_step(subf_t* subf, int nfp, int transfersize) {
                 subf[index].offset);
         subf[i].offset += stat;
     }
+
+    return stat;
 }
 

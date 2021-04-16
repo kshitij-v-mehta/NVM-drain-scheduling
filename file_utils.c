@@ -34,6 +34,7 @@ static int _dirlist(char* dirpath, char **filelist, int* num_entries) {
         if(d_ent->d_type == DT_REG)
             if (strncmp(d_ent->d_name, "data", 4) == 0) {
                 strcpy(filelist[listindex], d_ent->d_name);
+                log_debug("found %s\n", d_ent->d_name);
                 listindex++;
             }
 
@@ -54,7 +55,7 @@ static char** _allocate_subfiles(int n) {
     subfiles = (char**) malloc (n*sizeof(char*));
     if (NULL == subfiles) {
         perror("malloc");
-        fprintf(stderr, "Could not allocate subfiles. ABORTING.\n");
+        log_error("Could not allocate subfiles. ABORTING.\n");
         fflush(stderr);
         MPI_Abort(MPI_COMM_WORLD, 1);
         return NULL;
@@ -64,7 +65,7 @@ static char** _allocate_subfiles(int n) {
         subfiles[i] = (char*) malloc(32);
         if (NULL == subfiles[i]) {
             perror("malloc");
-            fprintf(stderr, "Could not allocate subfiles. ABORTING.\n");
+            log_error("Could not allocate subfiles. ABORTING.\n");
             fflush(stderr);
             MPI_Abort(MPI_COMM_WORLD, 1);
             return NULL;
@@ -92,9 +93,10 @@ static char** _get_data_files(char *adios_fname, int *num_files) {
 
     // Get list of data files on the node.
     _dirlist(fullpath, subfiles, num_files);
+    if(get_lrank() == 0) log_info("found %d files on node\n", num_files);
 
     if (*num_files == 0) {
-        fprintf(stderr, "Could not find any subfiles on node. ABORTING.\n");
+        log_error("Could not find any subfiles on node. ABORTING.\n");
         fflush(stderr);
         MPI_Abort(MPI_COMM_WORLD, 1);
         return NULL;
@@ -167,6 +169,9 @@ char** _recv_subfiles(int *num_myfiles) {
         MPI_Recv(subfiles[i], 32, MPI_CHAR, 0, 0, get_lcomm(), &status);
 
     log_info("%d num files assigned\n", *num_myfiles);
+    for(i=0; i<*num_myfiles; i++)
+        log_debug("subfile %s\n", subfiles[i]);
+
     return subfiles;
 }
 
@@ -200,7 +205,7 @@ int _create_subft_entry(subf_t* t, char* datafilename, char* adiosfname) {
     // Open file on ssd for reading
     if(-1 == (t->fd_in = open(infname, O_RDONLY, 0644))) {
         perror("open");
-        fprintf(stderr, "%d/%d could not open %s. ABORTING.\n",
+        log_error("%d/%d could not open %s. ABORTING.\n",
                 get_lrank(), get_grank(), infname);
         fflush(stderr);
         MPI_Abort(MPI_COMM_WORLD, 1);
@@ -210,7 +215,7 @@ int _create_subft_entry(subf_t* t, char* datafilename, char* adiosfname) {
     // Open file on pfs for writing
     if(-1 == (t->fd_out = open(outfname, O_CREAT|O_WRONLY, 0644))) {
         perror("open");
-        fprintf(stderr, "%d/%d could not open %s. ABORTING.\n",
+        log_error("%d/%d could not open %s. ABORTING.\n",
                 get_lrank(), get_grank(), infname);
         fflush(stderr);
         MPI_Abort(MPI_COMM_WORLD, 1);
@@ -235,7 +240,7 @@ int _form_subfile_t(char* adiosfname, subf_t** mysubfiles,
     *mysubfiles = (subf_t*) malloc (num_myfiles * sizeof(subf_t));
     if(NULL == *mysubfiles) {
         perror("malloc");
-        fprintf(stderr, "Could not allocate subf_t array. ABORTING.\n");
+        log_error("Could not allocate subf_t array. ABORTING.\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
         return 1;
     }
