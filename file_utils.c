@@ -122,14 +122,16 @@ char** _root_distribute_subfiles(char* adios_fname, int *num_myfiles) {
     
         // Distribute files equally. Remainder files also get distributed
         // equally.
-        n = num_files_on_node/get_lsize() + (num_files_on_node%get_lsize())/(i+1);
+        n = num_files_on_node/get_lsize() + (i<(num_files_on_node%get_lsize()));
     
         // Rank 0 does not send to itself
         if (i==0) {
             *num_myfiles = n;
             subfiles = _allocate_subfiles(*num_myfiles);
-            for (j=0; j<*num_myfiles; j++)
+            for (j=0; j<*num_myfiles; j++) {
                 strcpy(subfiles[j], allsubfiles[j]);
+                log_debug("assigned subfile %s to self\n", allsubfiles[j]);
+            }
             startindex += n;
 
             log_info("%d num subfiles assigned\n", *num_myfiles);
@@ -141,7 +143,8 @@ char** _root_distribute_subfiles(char* adios_fname, int *num_myfiles) {
     
         // Send the filenames
         for(j=0; j<n; j++) {
-            MPI_Send(allsubfiles[startindex++], 32, MPI_CHAR, i, 0, get_lcomm()); 
+            MPI_Send(allsubfiles[startindex++], 32, MPI_CHAR, i, 0, get_lcomm());
+            log_debug("sent subfile %s to %d\n", allsubfiles[startindex-1], i);
         }
     }
 
@@ -170,7 +173,7 @@ char** _recv_subfiles(int *num_myfiles) {
 
     log_info("%d num files assigned\n", *num_myfiles);
     for(i=0; i<*num_myfiles; i++)
-        log_debug("subfile %s\n", subfiles[i]);
+        log_debug("received subfile %s\n", subfiles[i]);
 
     return subfiles;
 }
