@@ -22,6 +22,9 @@ static int      num_threads;        // no. of threads in each drainer process
 
 
 int _mainloop() {
+    //trigger_check();
+    //execute_
+
     int copy_status[8] = {-1};
     int allcopied = 0;
     char *sizemg;
@@ -94,9 +97,10 @@ int main(int argc, char **argv) {
  * --- DONE --- Threads copy data
  * --- DONE --- Set the num_threads somewhere.
  * --- DONE --- Add logger
- * Debug wrong writing
- * Implement work stealing
- * Write trigger code
+ * --- DONE --- Debug wrong writing
+ * Debug wrong multi-threaded writing
+ * Develop trigger mechanism
  * Copy md.idx
  * Put all input args in a config file
  */
+

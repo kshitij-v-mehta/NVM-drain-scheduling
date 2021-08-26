@@ -34,5 +34,5 @@ clean:
 
 run:
 	rm -rf gs.bp/*
-	DRAINER_LOG_LEVEL=DEBUG OMP_NUM_THREADS=1 mpirun -np $(n) ./drainer -n 2 -t 8192 -p 0 -s 0 -f gs.bp -w 5
+	DRAINER_LOG_LEVEL=DEBUG OMP_NUM_THREADS=3 mpirun -np $(n) ./drainer -n 2 -t 65536 -p 0 -s 0 -f gs.bp -w 5
 	./verify.sh
