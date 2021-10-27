@@ -12,10 +12,9 @@
 #define MON_POLICY_STRICT  0
 #define MON_POLICY_RELAXED 1
 
-// Ensure GREEN is 0
-#define GREEN      0
-#define RED        1
-#define EXIT_DONE  2
+#define RED        0
+#define GREEN      1
+#define EXIT_DONE  -9
 
 
 #endif
