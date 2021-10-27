@@ -25,6 +25,19 @@ static int* _shm_ptr;
 
 
 /*
+ * Returns the no. of ranks that have signaled EXIT_DONE
+ */
+int shm_get_exit() {
+    int i, nexit = 0;
+    for(i=0; i<num_ranks; i++) {
+        if(_shm_ptr[i*cache_line_size] == EXIT_DONE)
+            nexit++;
+    }
+
+    return nexit;
+}
+
+/*
  * Returns the no. of ranks that have reported their status as GREEN -
  * not currently involved in MPI communication
  */

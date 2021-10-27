@@ -35,8 +35,13 @@ static int (*mon_policy[2]) () = { _strict_check, _relaxed_check };
 static int _strict_check() {
     //log.debug("strict check\n");
 
-    int traffic_status = GREEN;
-    if (shm_get_green() != _num_ranks)
+    int traffic_status;
+
+    if (shm_get_exit() == _num_ranks)
+        traffic_status = EXIT_DONE;
+    else if (shm_get_green() == _num_ranks)
+        traffic_status = GREEN;
+    else
         traffic_status = RED;
 
     log_debug("Strict check traffic status: %d\n", traffic_status);
@@ -51,8 +56,13 @@ static int _strict_check() {
 static int _relaxed_check() {
     //log.debug("relaxed check\n");
 
-    int traffic_status = GREEN;
-    if (shm_get_red() > _relaxed_n)
+    int traffic_status;
+
+    if (shm_get_exit() == _num_ranks)
+        traffic_status = EXIT_DONE;
+    else if (shm_get_green() >= _relaxed_n)
+        traffic_status = GREEN;
+    else
         traffic_status = RED;
 
     log_debug("Relaxed check traffic status: %d\n", traffic_status);
