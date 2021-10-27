@@ -81,7 +81,7 @@ static char** _allocate_subfiles(int n) {
 /*
  * Get a list of adios data files under the input adios container
  */
-static char** _get_data_files(char *adios_fname, int *num_files) {
+static char** _get_data_files(char *adios_fname, int *num_files, int fpn) {
     int i;
     char** subfiles = NULL;
     char fullpath[128] = {0};
@@ -93,7 +93,8 @@ static char** _get_data_files(char *adios_fname, int *num_files) {
     subfiles = _allocate_subfiles(40);   
 
     // Get list of data files on the node.
-    _dirlist(fullpath, subfiles, num_files);
+    while(*num_files < fpn)
+        _dirlist(fullpath, subfiles, num_files);
     if(get_lrank() == 0) log_info("found %d files on node\n", *num_files);
 
     if (*num_files == 0) {
@@ -109,14 +110,15 @@ static char** _get_data_files(char *adios_fname, int *num_files) {
 /*
  * Node-local root gets list of data subfiles from the SSD and distributes
  * them evenly amongst all ranks.
+ * fpn - num subfiles expected per node
  */
-char** _root_distribute_subfiles(char* adios_fname, int *num_myfiles) {
+char** _root_distribute_subfiles(char* adios_fname, int *num_myfiles, int fpn) {
     char** allsubfiles = NULL;
     char** subfiles = NULL;
     int i,j, num_files_on_node, n;
     int startindex=0;
 
-    allsubfiles =  _get_data_files(adios_fname, &num_files_on_node);
+    allsubfiles =  _get_data_files(adios_fname, &num_files_on_node, fpn);
     
     // Distribute subfiles to other ranks on node
     for(i=0; i<get_lsize(); i++) {
@@ -264,9 +266,10 @@ int _form_subfile_t(char* adiosfname, subf_t** mysubfiles,
  * It distributes them evenly amongst ranks.
  * Everyone then creates an array of subfile_t structs for their assigned
  * files and opens them for reading.
+ * fpn = subfiles per node
  */
 int assign_and_open_local_subfiles(char* adiosfname, subf_t** mysubfiles, 
-        int* num_myfiles) {
+        int* num_myfiles, int fpn) {
     int i, j, start_index=0, n_assigned;
     int num_files_on_node = 0;
     char** subfilenames= NULL;
@@ -274,7 +277,7 @@ int assign_and_open_local_subfiles(char* adiosfname, subf_t** mysubfiles,
 
     // Distributes data files on the node amongst all ranks
     if(get_lrank() == 0)
-        subfilenames = _root_distribute_subfiles(adiosfname, num_myfiles);
+        subfilenames = _root_distribute_subfiles(adiosfname, num_myfiles, fpn);
     else
         subfilenames = _recv_subfiles(num_myfiles);
 

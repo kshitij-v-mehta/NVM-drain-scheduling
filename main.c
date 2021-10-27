@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
     mon_init(num_sim_ranks, monpolicy, monpolicyarg);
 
     // Open input and output ADIOS subfiles
-    assign_and_open_local_subfiles(ad_fname, &mysubfiles, &num_myfiles);
+    assign_and_open_local_subfiles(ad_fname, &mysubfiles, &num_myfiles, ad_nw);
 
     // Start the main loop
     _mainloop();
@@ -122,6 +122,8 @@ int main(int argc, char **argv) {
  *  --- DONE --- Set the num_threads somewhere
  *  --- DONE --- Add logger
  *  --- DONE --- Test concurrent writing to ssd and flushing
+ *  --- DONE --- Fix subfiles not being found if drainer launched too early
+ *  Pass entire BB path on the cmd line and remove prefix from file_utils.c
  *  Create public traffic status library
  *  Copy md.idx
  *  Develop trigger mechanism
