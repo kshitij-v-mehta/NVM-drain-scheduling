@@ -83,7 +83,7 @@ int copy_step(subf_t* subf, int nfp, int transfersize) {
     // Copy leftover files if num files not exactly divisible by num threads
     i = t_id < (nfp%num_t);
     if(i) {
-        index = n*num_t + i-1;
+        index = n*num_t + t_id;
         log_debug("copying %s, fd: %d\n", subf[index].fname_ssd,
                 subf[index].fd_in); 
         stat = _copy(subf[index].fd_in, subf[index].fd_out, transfersize, 
