@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <mpi.h>
 #include "file_utils.h"
 #include "mpi_utils.h"
@@ -203,23 +204,22 @@ int _create_subft_entry(subf_t* t, char* datafilename, char* adiosfname) {
     memset(t->fname_pfs, 0, 128);
     strcpy(t->fname_pfs, outfname);
 
-    log_info("opening %s\n", infname);
+    log_info("opening '%s' for reading\n", infname);
 
     // Open file on ssd for reading
     if(-1 == (t->fd_in = open(infname, O_RDONLY, 0644))) {
-        perror("open");
-        log_error("%d/%d could not open %s. ABORTING.\n",
-                get_lrank(), get_grank(), infname);
+        perror("open failed");
+        log_error("Could not open %s for reading. ABORTING.\n", infname);
         fflush(stderr);
         MPI_Abort(MPI_COMM_WORLD, 1);
         return 1;
     }
     
+    log_info("opening '%s' for writing\n", outfname);
     // Open file on pfs for writing
     if(-1 == (t->fd_out = open(outfname, O_CREAT|O_WRONLY, 0644))) {
         perror("open");
-        log_error("%d/%d could not open %s. ABORTING.\n",
-                get_lrank(), get_grank(), infname);
+        log_error("Could not open %s for writing. ABORTING.\n", infname);
         fflush(stderr);
         MPI_Abort(MPI_COMM_WORLD, 1);
         return 1;
