@@ -46,12 +46,12 @@ void log_init() {
 }
 
 void log_info(char *s, ...) {
-    if (log_level < LEVEL_INFO) return;
+    if (log_level > LEVEL_INFO) return;
     LOG_MSG(stdout)
 }
 
 void log_debug(char *s, ...) {
-    if (log_level < LEVEL_DEBUG) return;
+    if (log_level > LEVEL_DEBUG) return;
     LOG_MSG(stdout)
 }
 
