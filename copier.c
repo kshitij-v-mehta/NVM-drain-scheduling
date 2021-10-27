@@ -63,6 +63,7 @@ int _copy(int srcfd, int destfd, int transfersize, off_t offset) {
  * A thread copies one transfersize amount of data from all of its subfiles
  * This is called from an OpenMP region
  * nfp: total no. of subfiles for this mpi rank
+ * Returns the number of bytes copied
  */
 int copy_step(subf_t* subf, int nfp, int transfersize) {
     int i, n, index, stat=0;
