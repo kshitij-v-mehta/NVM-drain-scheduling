@@ -36,7 +36,7 @@ int _copy(int srcfd, int destfd, int transfersize, off_t offset) {
     if (rstat == -1) {
         perror("pread");
         fprintf(stderr, "%d/%d encountered read error at offset %jd\n",
-                get_lrank(), get_grank(), (intmax_t) offset); 
+                get_lrank(), get_grank(), offset); 
         fflush(stderr);
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
@@ -49,7 +49,7 @@ int _copy(int srcfd, int destfd, int transfersize, off_t offset) {
     if (wstat == -1) {
         perror("pwrite");
         fprintf(stderr, "%d/%d encountered write error at offset %jd\n",
-                get_lrank(), get_grank(), (intmax_t) offset); 
+                get_lrank(), get_grank(), offset); 
         fflush(stderr);
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
