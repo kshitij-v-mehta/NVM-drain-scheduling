@@ -93,7 +93,7 @@ static char** _get_data_files(char *adios_fname, int *num_files) {
 
     // Get list of data files on the node.
     _dirlist(fullpath, subfiles, num_files);
-    if(get_lrank() == 0) log_info("found %d files on node\n", num_files);
+    if(get_lrank() == 0) log_info("found %d files on node\n", *num_files);
 
     if (*num_files == 0) {
         log_error("Could not find any subfiles on node. ABORTING.\n");
