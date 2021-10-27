@@ -12,7 +12,7 @@ shm.o : shm.c
 copier.o : copier.c
 	mpicc -c -g -fopenmp copier.c
 
-main.o : monitor.o utils.o copier.o shm.o
+main.o : main.c monitor.o utils.o copier.o shm.o
 	mpicc -c -g -fopenmp main.c
 
 utils.o : utils.c
