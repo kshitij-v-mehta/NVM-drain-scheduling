@@ -10,7 +10,8 @@
 #define LOG_MSG(fp) \
     do {                                                \
         char str[64] = {0};                             \
-        sprintf(str, "T %02d/%02d Rank %02d/%02d/%05d ",\
+        sprintf(str, "%f T %02d/%02d Rank %02d/%02d/%05d ",\
+                MPI_Wtime()-start_timestamp,            \
                 omp_get_thread_num(),                   \
                 omp_get_num_threads(),                  \
                 get_lrank(), get_lsize(), get_grank()); \
@@ -27,6 +28,7 @@
 #define LEVEL_DEBUG 1
 #define LEVEL_INFO  2
 
+static double start_timestamp;
 static int log_level;
 char* log_str[] = {"NONE", "DEBUG", "INFO"};
 
@@ -43,6 +45,7 @@ void log_init() {
         fprintf(stdout, "Log level set to %s\n", log_str[log_level]);
         fflush(stdout);
     }
+    start_timestamp = MPI_Wtime();
 }
 
 void log_info(char *s, ...) {
