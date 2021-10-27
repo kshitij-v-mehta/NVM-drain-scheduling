@@ -13,8 +13,9 @@
 #define MON_POLICY_RELAXED 1
 
 // Ensure GREEN is 0
-#define GREEN 0
-#define RED   1
+#define GREEN      0
+#define RED        1
+#define EXIT_DONE  2
 
 
 #endif
