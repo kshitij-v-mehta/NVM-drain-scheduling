@@ -1,6 +1,7 @@
 #ifndef __MY_CODES__
 #define __MY_CODES__
 
+
 #define PREAD_ERROR     1
 #define PWRITE_ERROR    2
 #define MALLOC_ERROR    3
@@ -11,8 +12,9 @@
 #define MON_POLICY_STRICT  0
 #define MON_POLICY_RELAXED 1
 
-#define GREEN 1
-#define RED   2
+// Ensure GREEN is 0
+#define GREEN 0
+#define RED   1
 
 
 #endif
