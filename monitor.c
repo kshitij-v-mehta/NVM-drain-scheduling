@@ -2,10 +2,11 @@
 #include <stdlib.h>
 #include "codes.h"
 #include "shm.h"
+#include "logger.h"
 
 
 /* No. of simulation ranks whose status we need to monitor*/
-static int num_ranks;
+static int _num_ranks;
 
 
 /* Relaxed policy metric.
@@ -34,10 +35,12 @@ static int (*mon_policy[2]) () = { _strict_check, _relaxed_check };
 static int _strict_check() {
     //log.debug("strict check\n");
 
-    if (shm_get_green() == num_ranks)
-        return GREEN;
+    int traffic_status = GREEN;
+    if (shm_get_green() != _num_ranks)
+        traffic_status = RED;
 
-    return RED;
+    log_debug("Strict check traffic status: %d\n", traffic_status);
+    return traffic_status;
 }
 
 
@@ -48,10 +51,12 @@ static int _strict_check() {
 static int _relaxed_check() {
     //log.debug("relaxed check\n");
 
-    if (shm_get_red() <= _relaxed_n)
-        return GREEN;
+    int traffic_status = GREEN;
+    if (shm_get_red() > _relaxed_n)
+        traffic_status = RED;
 
-    return RED;
+    log_debug("Relaxed check traffic status: %d\n", traffic_status);
+    return traffic_status;
 }
 
 
@@ -71,7 +76,7 @@ int nw_traffic_status() {
  * Set which policy must be used to implement network traffic monitoring
  */
 int mon_init(int num_ranks, int policyid, int relaxed_n) {
-    num_ranks = num_ranks;
+    _num_ranks = num_ranks;
 
     _traffic_status = mon_policy[policyid];
     _relaxed_n = relaxed_n;
