@@ -12,7 +12,7 @@
 #include "logger.h"
 
 //TODO
-static char* ssd_prefix="./mnt/bb/kmehta/";
+static char _nvm_prefix[128];
 
 
 /*
@@ -86,13 +86,15 @@ static char** _get_data_files(char *adios_fname, int *num_files, int fpn) {
     char** subfiles = NULL;
     char fullpath[128] = {0};
 
-    strcpy(fullpath, ssd_prefix);
+    strcpy(fullpath, _nvm_prefix);
+    strcat(fullpath, "/");
     strcat(fullpath, adios_fname);
 
     // malloc subfiles array
-    subfiles = _allocate_subfiles(40);   
+    subfiles = _allocate_subfiles(40);  //TODO
 
     // Get list of data files on the node.
+    log_debug("Looking for subfiles\n");
     while(*num_files < fpn)
         _dirlist(fullpath, subfiles, num_files);
     if(get_lrank() == 0) log_info("found %d files on node\n", *num_files);
@@ -191,7 +193,8 @@ int _create_subft_entry(subf_t* t, char* datafilename, char* adiosfname) {
     char infname[128] = {0}, outfname[128] = {0};
     
     // Set the full input ssd fname
-    strcpy(infname, ssd_prefix);
+    strcpy(infname, _nvm_prefix);
+    strcat(infname, "/");
     strcat(infname, adiosfname);
     strcat(infname, "/");
     strcat(infname, datafilename);
@@ -261,6 +264,13 @@ int _form_subfile_t(char* adiosfname, subf_t** mysubfiles,
 
 
 /*---------------------------------------------------------------------------*/
+/* Set the path to the NVM location. e.g. /mnt/bb/kmehta
+ */
+void file_utils_init(char *nvm_prefix) {
+    memset((void*)_nvm_prefix, 0, strlen(_nvm_prefix));
+    strcpy(_nvm_prefix,nvm_prefix);
+}
+
 /*
  * Local root sees what subfiles are available on the local ssd (data*).
  * It distributes them evenly amongst ranks.

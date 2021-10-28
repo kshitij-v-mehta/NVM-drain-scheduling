@@ -5,16 +5,19 @@
 #include <mpi.h>
 
 void print_usage() {
-    fprintf(stderr, "Run with args: -n num_sim_ranks_on_node -t ssd->pfs data transfer size -p monitoring policy id 0/1 -s arg for relaxed monitor policy -f adios filename -w num adios subsfiles per node\n");
+    fprintf(stderr, "Run with args: -n num_sim_ranks_on_node -t ssd->pfs data transfer size -p monitoring policy id 0/1 -s arg for relaxed monitor policy -f adios filename -w num adios subsfiles per node -m prefix to the nvm (e.g. /mnt/bb/<userid> on Summit)\n");
     fflush(stderr);
 }
 
 
-int read_input_args(int argc, char **argv, int rank, int *num_sim_ranks, int *transfersize, int *monpolicy, int *monparg, char** adfname, int *ad_n) {
-    int c, n=0, t=0, p=0, s=0, f=0, w=0;
+int read_input_args(int argc, char **argv, int rank, int *num_sim_ranks, 
+        int *transfersize, int *monpolicy, int *monparg, char** adfname,
+        int *ad_n, char* nvm_prefix) {
+    
+    int c, n=0, t=0, p=0, s=0, f=0, w=0, m=0;
     char *size_mg;
 
-    while ((c=getopt(argc, argv, "n:t:p:s:f:w:")) != -1)
+    while ((c=getopt(argc, argv, "n:t:p:s:f:w:m:")) != -1)
         switch(c) {
             case 'n':
                 n=1;
@@ -64,13 +67,23 @@ int read_input_args(int argc, char **argv, int rank, int *num_sim_ranks, int *tr
                 p=1;
                 *monparg = strtol(optarg, &size_mg, 10);
                 break;
+            case 'm':
+                if (strlen(optarg) > 127) {
+                    if(rank == 0)
+                        fprintf(stderr, "cmd line arg for nvm prefix too long. Maxlen = 127 chars. ABORTING.\n");
+                    MPI_Abort(MPI_COMM_WORLD, 1);
+                }
+                m=1;
+                memset(nvm_prefix, 0, strlen(nvm_prefix));
+                strcpy(nvm_prefix, optarg);
+                break;
             default:
                 print_usage();
                 MPI_Abort(MPI_COMM_WORLD, 1);
                 exit(1);
         }
 
-    if (!n || !t || !p || !f || !w) {
+    if (!n || !t || !p || !f || !w || !m) {
         print_usage();
         MPI_Abort(MPI_COMM_WORLD, 1);
         exit(1);
@@ -84,8 +97,8 @@ int read_input_args(int argc, char **argv, int rank, int *num_sim_ranks, int *tr
     }
 
     if (rank == 0) {
-        fprintf(stdout, "INPUT ARGS: num_sim_ranks_on_node: %d, transfersize: %d, monpolicy: %d, monpolicyarg: %d, adios_file: %s, n_subfiles_per_node: %d\n", 
-                *num_sim_ranks, *transfersize, *monpolicy, *monparg, *adfname, *ad_n);
+        fprintf(stdout, "INPUT ARGS: num_sim_ranks_on_node: %d, transfersize: %d, monpolicy: %d, monpolicyarg: %d, adios_file: %s, n_subfiles_per_node: %d, nvm prefix: '%s'\n", 
+                *num_sim_ranks, *transfersize, *monpolicy, *monparg, *adfname, *ad_n, nvm_prefix);
         fflush(stdout);
     }
 
