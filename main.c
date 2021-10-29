@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <mpi.h>
 #include <omp.h>
 #include "codes.h"
@@ -21,6 +22,44 @@ static int      num_myfiles;        // no. of subfiles assigned to me
 static int      num_threads;        // no. of threads in each drainer process
 
 #define TWOGB  2147483647
+
+
+/*
+ * Dont track GREEN or RED. Sleep for a few microseconds and flush.
+ */
+int _mainloop_2() {
+
+    int copy_status[8] = {-1};
+    int curState = RED;
+    int allcopied = 0;
+    char *sizemg;
+    int i;
+    int nt;
+    
+    nt = (int)strtol(getenv("OMP_NUM_THREADS"), &sizemg, 10);
+
+    if( (get_grank() == 0) && (omp_get_thread_num() == 0) )
+        log_info("Num threads set to %d\n", omp_get_num_threads());
+
+    // Start flushing
+    while( (nw_traffic_status() != EXIT_DONE) ) {
+        usleep(10000);  // 10 ms
+        copy_status[omp_get_thread_num()] = 
+            copy_step(mysubfiles, num_myfiles, transfersize);
+    }
+
+    log_info("EXIT_DONE received\n");
+    // Main app has exited. Flush remaining data.
+    while(!allcopied) {
+        transfersize = TWOGB;
+        copy_status[omp_get_thread_num()] = 
+            copy_step(mysubfiles, num_myfiles, transfersize);
+
+        allcopied = 1;
+        for(i=0; i<nt; i++)
+            if (copy_status[i] != 0) allcopied = 0;
+    }
+}
 
 
 int _mainloop() {
@@ -103,6 +142,7 @@ int main(int argc, char **argv) {
     // Start the main loop
     _mainloop();
 
+cleanup:
     log_info("All done. Goodbye.\n");
     // Cleanup
     mon_finalize();
