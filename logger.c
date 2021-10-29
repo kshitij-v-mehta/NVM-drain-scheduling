@@ -10,15 +10,17 @@
 #define LOG_MSG(fp) \
     do {                                                \
         char str[64] = {0};                             \
-        sprintf(str, "%f T %02d/%02d Rank %02d/%02d/%05d ",\
+        sprintf(str, "%f T %02d/%02d Rank %02d/%02d/%s/%05d/%05d ",\
                 MPI_Wtime()-start_timestamp,            \
                 omp_get_thread_num(),                   \
                 omp_get_num_threads(),                  \
-                get_lrank(), get_lsize(), get_grank()); \
+                get_lrank(), get_lsize(),               \
+                get_nodename(),                         \
+                get_grank(), get_gsize());              \
         strcat(str,s);                                  \
         va_list args;                                   \
         va_start(args, s);                              \
-        vfprintf(fp, str, args);                             \
+        vfprintf(fp, str, args);                        \
         va_end(args);                                   \
         fflush(stdout);                                 \
     } while(0);
@@ -31,6 +33,20 @@
 static double start_timestamp;
 static int log_level;
 char* log_str[] = {"NONE", "DEBUG", "INFO"};
+
+void log_info(char *s, ...) {
+    if (log_level > LEVEL_INFO) return;
+    LOG_MSG(stdout)
+}
+
+void log_debug(char *s, ...) {
+    if (log_level > LEVEL_DEBUG) return;
+    LOG_MSG(stdout)
+}
+
+void log_error(char *s, ...) {
+    LOG_MSG(stderr)
+}
 
 void log_init() {
     log_level = LEVEL_INFO;
@@ -46,19 +62,9 @@ void log_init() {
         fflush(stdout);
     }
     start_timestamp = MPI_Wtime();
-}
 
-void log_info(char *s, ...) {
-    if (log_level > LEVEL_INFO) return;
-    LOG_MSG(stdout)
-}
-
-void log_debug(char *s, ...) {
-    if (log_level > LEVEL_DEBUG) return;
-    LOG_MSG(stdout)
-}
-
-void log_error(char *s, ...) {
-    LOG_MSG(stderr)
+    // All ranks check in
+    log_debug("checking in\n");
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
