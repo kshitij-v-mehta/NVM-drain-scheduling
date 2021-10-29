@@ -10,6 +10,7 @@ typedef struct _subfile_t {
     off_t offset;
 } subf_t;
 
+void file_utils_init(char*);
 int assign_and_open_local_subfiles(char*, subf_t**, int*, int); 
 
 #endif

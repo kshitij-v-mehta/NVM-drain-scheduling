@@ -20,6 +20,7 @@ static int      ad_nw = 0;          // no. of adios writers on the node
 static subf_t*  mysubfiles;         // list of subfiles assigned to this rank
 static int      num_myfiles;        // no. of subfiles assigned to me
 static int      num_threads;        // no. of threads in each drainer process
+static char     nvm_prefix[128];    // Path to the NVM. e.g. /mnt/bb/kmehta
 
 #define TWOGB  2147483647
 
@@ -104,8 +105,8 @@ int _mainloop() {
     }  // while nw_traffic_status != EXIT_DONE
 
 
-    log_info("EXIT_DONE received\n");
     // Main app has exited. Flush remaining data.
+    log_info("EXIT_DONE received\n");
     while(!allcopied) {
 #pragma omp parallel
         {
@@ -128,13 +129,16 @@ int main(int argc, char **argv) {
 
     // Read input args
     read_input_args(argc, argv, get_grank(), &num_sim_ranks, &transfersize, 
-                    &monpolicy, &monpolicyarg, &ad_fname, &ad_nw);
+                    &monpolicy, &monpolicyarg, &ad_fname, &ad_nw, nvm_prefix);
  
     // Init logging information
     log_init();
 
     // Initialize traffic monitor
     mon_init(num_sim_ranks, monpolicy, monpolicyarg);
+
+    // Set the prefix to the NVM. e.g. /mnt/bb/kmehta
+    file_utils_init(nvm_prefix);
 
     // Open input and output ADIOS subfiles
     assign_and_open_local_subfiles(ad_fname, &mysubfiles, &num_myfiles, ad_nw);
@@ -163,7 +167,7 @@ cleanup:
  *  --- DONE --- Add logger
  *  --- DONE --- Test concurrent writing to ssd and flushing
  *  --- DONE --- Fix subfiles not being found if drainer launched too early
- *  Pass entire BB path on the cmd line and remove prefix from file_utils.c
+ *  --- DONE --- Remove hard-coded nvm prefix and take it as cmd line arg
  *  Create public traffic status library
  *  Copy md.idx
  *  Develop trigger mechanism
