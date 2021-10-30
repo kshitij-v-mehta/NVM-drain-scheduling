@@ -28,7 +28,7 @@ int _mainloop() {
     //trigger_check();
     //execute_
 
-    int copy_status[8] = {-1};
+    int *copy_status = NULL;
     int curState = RED;
     int allcopied = 0;
     char *sizemg;
@@ -36,6 +36,16 @@ int _mainloop() {
     int nt;
     
     nt = (int)strtol(getenv("OMP_NUM_THREADS"), &sizemg, 10);
+
+    // Allocate array to hold the copy status for each thread
+    copy_status = (int*) malloc (nt*sizeof(int));
+    if (NULL == copy_status) {
+        perror("Could not allocate internal int array for %d threads. ABORTING.\n", nt);
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+    for(i=0; i<nt; i++)
+        copy_status[i] = -1;
+
 
 #pragma omp parallel
     {
@@ -80,6 +90,8 @@ int _mainloop() {
         for(i=0; i<nt; i++)
             if (copy_status[i] != 0) allcopied = 0;
     }
+
+    free(copy_status);
 }
 
 
@@ -128,10 +140,11 @@ int main(int argc, char **argv) {
  *  --- DONE --- Test concurrent writing to ssd and flushing
  *  --- DONE --- Fix subfiles not being found if drainer launched too early
  *  --- DONE --- Remove hard-coded nvm prefix and take it as cmd line arg
+ *  Clearly state the max. no. of subfiles allowed on a node
+ *  Write code to flush multiple bp files from a node
  *  Create public traffic status library
  *  Copy md.idx
  *  Develop trigger mechanism
- *  Put all input args in a config file
  *  Maintain a table of computational kernels with index=filename:linenumber
  *   and value=runtime for ml
  */
