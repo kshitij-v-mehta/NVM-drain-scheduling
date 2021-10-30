@@ -10,6 +10,7 @@
 #include "copier.h"
 #include "mpi_utils.h"
 #include "logger.h"
+#include "draining.h"
 
 static int      num_sim_ranks;      // no. of simulation ranks to monitor
 static int      transfersize;       // bytes to copy from ssd->pfs in each call
@@ -21,46 +22,9 @@ static subf_t*  mysubfiles;         // list of subfiles assigned to this rank
 static int      num_myfiles;        // no. of subfiles assigned to me
 static int      num_threads;        // no. of threads in each drainer process
 static char     nvm_prefix[128];    // Path to the NVM. e.g. /mnt/bb/kmehta
+static int      drain_type;         // Coordinated or independent draining
 
 #define TWOGB  2147483647
-
-
-/*
- * Dont track GREEN or RED. Sleep for a few microseconds and flush.
- */
-int _mainloop_2() {
-
-    int copy_status[8] = {-1};
-    int curState = RED;
-    int allcopied = 0;
-    char *sizemg;
-    int i;
-    int nt;
-    
-    nt = (int)strtol(getenv("OMP_NUM_THREADS"), &sizemg, 10);
-
-    if( (get_grank() == 0) && (omp_get_thread_num() == 0) )
-        log_info("Num threads set to %d\n", omp_get_num_threads());
-
-    // Start flushing
-    while( (nw_traffic_status() != EXIT_DONE) ) {
-        usleep(10000);  // 10 ms
-        copy_status[omp_get_thread_num()] = 
-            copy_step(mysubfiles, num_myfiles, transfersize);
-    }
-
-    log_info("EXIT_DONE received\n");
-    // Main app has exited. Flush remaining data.
-    while(!allcopied) {
-        transfersize = TWOGB;
-        copy_status[omp_get_thread_num()] = 
-            copy_step(mysubfiles, num_myfiles, transfersize);
-
-        allcopied = 1;
-        for(i=0; i<nt; i++)
-            if (copy_status[i] != 0) allcopied = 0;
-    }
-}
 
 
 int _mainloop() {
@@ -79,7 +43,7 @@ int _mainloop() {
     // Allocate array to hold the copy status for each thread
     copy_status = (int*) malloc (nt*sizeof(int));
     if (NULL == copy_status) {
-        perror("Could not allocate internal int array for %d threads. ABORTING.\n", nt);
+        perror("Could not alloc internal int array for threads. ABORTING.\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
     for(i=0; i<nt; i++)
@@ -93,27 +57,8 @@ int _mainloop() {
     }
 
     // Start flushing
-    while( (nw_traffic_status() != EXIT_DONE) ) {
-        while( (nw_traffic_status() == GREEN) ) {
-
-            // To minimize logging outputs
-            if(curState != GREEN) {
-                log_info("Traffic Green\n");
-                curState = GREEN;
-            }
-
-#pragma omp parallel
-            {
-                copy_status[omp_get_thread_num()] = 
-                    copy_step(mysubfiles, num_myfiles, transfersize);
-            }
-        }
-        if(curState != RED) {
-            log_info("Traffic Red\n");
-            curState = RED;
-        }
-    }  // while nw_traffic_status != EXIT_DONE
-
+    while( (nw_traffic_status() != EXIT_DONE) )
+        drain(mysubfiles, num_myfiles, transfersize);
 
     // Main app has exited. Flush remaining data.
     log_info("EXIT_DONE received\n");
@@ -130,6 +75,10 @@ int _mainloop() {
             if (copy_status[i] != 0) allcopied = 0;
     }
 
+    // Node-local roots look for and copy the adios metadata file
+    // mdx and profiling.json
+    //if(get_lrank() == 0) copy_adios_md();
+
     free(copy_status);
 }
 
@@ -141,10 +90,14 @@ int main(int argc, char **argv) {
 
     // Read input args
     read_input_args(argc, argv, get_grank(), &num_sim_ranks, &transfersize, 
-                    &monpolicy, &monpolicyarg, &ad_fname, &ad_nw, nvm_prefix);
+                    &monpolicy, &monpolicyarg, &ad_fname, &ad_nw, nvm_prefix,
+                    &drain_type);
  
     // Init logging information
     log_init();
+
+    // Set the draining method
+    set_drain_type(drain_type);
 
     // Initialize traffic monitor
     mon_init(num_sim_ranks, monpolicy, monpolicyarg);
@@ -180,6 +133,9 @@ cleanup:
  *  --- DONE --- Test concurrent writing to ssd and flushing
  *  --- DONE --- Fix subfiles not being found if drainer launched too early
  *  --- DONE --- Remove hard-coded nvm prefix and take it as cmd line arg
+ *  --- DONE --- Implement and select different draining methods
+ *  Add options to setup continuous and periodic draining
+ *  Add profile timers and option to log into separate files for ranks
  *  Clearly state the max. no. of subfiles allowed on a node
  *  Write code to flush multiple bp files from a node
  *  Create public traffic status library
