@@ -18,7 +18,7 @@ int cache_line_size = 128;
 static int shmsize;
 
 /* A unique ID to represent the shm key. */
-static int shmkey = 915;
+static int shmkey = 95;
 
 static int  _shmid;
 static int* _shm_ptr;
@@ -75,6 +75,7 @@ int shm_init(int n) {
 
     // Create the shm segment
     _shmid = shmget(shmkey, shmsize, IPC_CREAT|0666);
+    _shmid = shmget(shmkey, shmsize, 0444);
     if (_shmid < 0) {
         perror("shmget");
         return SHMGET_ERROR;

@@ -1,14 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <mpi.h>
 
 
 static int grank, lrank;
 static int gsize, lsize;
 static MPI_Comm localcomm;
+char nodename[MPI_MAX_PROCESSOR_NAME];
 
 
 int mpi_init(int argc, char** argv) {
+    int resultlen;
     MPI_Init(&argc, &argv);
 
     // Global rank and size
@@ -20,6 +23,9 @@ int mpi_init(int argc, char** argv) {
             MPI_INFO_NULL, &localcomm);
     MPI_Comm_rank(localcomm, &lrank);
     MPI_Comm_size(localcomm, &lsize);
+
+    memset(nodename, 0, MPI_MAX_PROCESSOR_NAME);
+    MPI_Get_processor_name(nodename, &resultlen);
 
     return 0;
 }
@@ -38,6 +44,10 @@ int get_gsize() {
 
 int get_lsize() {
     return lsize;
+}
+
+char* get_nodename() {
+    return nodename;
 }
 
 MPI_Comm get_lcomm() {
