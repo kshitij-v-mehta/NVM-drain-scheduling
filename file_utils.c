@@ -28,6 +28,7 @@ static int _dirlist(char* dirpath, char **filelist, int* num_entries) {
     d = opendir(dirpath);
     if (NULL == d) {
         perror("opendir");
+        log_error("Could not open %s\n", dirpath);
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
@@ -94,7 +95,7 @@ static char** _get_data_files(char *adios_fname, int *num_files, int fpn) {
     subfiles = _allocate_subfiles(40);  //TODO
 
     // Get list of data files on the node.
-    log_debug("Looking for subfiles\n");
+    log_debug("Looking for subfiles in %s\n", fullpath);
     while(*num_files < fpn)
         _dirlist(fullpath, subfiles, num_files);
     if(get_lrank() == 0) log_info("found %d files on node\n", *num_files);
