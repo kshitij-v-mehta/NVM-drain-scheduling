@@ -18,7 +18,7 @@ int cache_line_size = 128;
 static int shmsize;
 
 /* A unique ID to represent the shm key. */
-static int shmkey = 95;
+static int shmkey = 915;
 
 static int  _shmid;
 static int* _shm_ptr;
