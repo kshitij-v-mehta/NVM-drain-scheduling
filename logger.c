@@ -10,7 +10,8 @@
 #define LOG_MSG(fp) \
     do {                                                \
         char str[64] = {0};                             \
-        sprintf(str, "%f T %02d/%02d Rank %02d/%02d/%s/%05d/%05d ",\
+        sprintf(str, "%s %f T %02d/%02d Rank %02d/%02d/%s/%05d/%05d ",\
+                progname,                               \
                 MPI_Wtime()-start_timestamp,            \
                 omp_get_thread_num(),                   \
                 omp_get_num_threads(),                  \
@@ -33,6 +34,7 @@
 static double start_timestamp;
 static int log_level;
 char* log_str[] = {"NONE", "DEBUG", "INFO"};
+char* progname;
 
 void log_info(char *s, ...) {
     if (log_level > LEVEL_INFO) return;
@@ -48,7 +50,8 @@ void log_error(char *s, ...) {
     LOG_MSG(stderr)
 }
 
-void log_init() {
+void log_init(char* argv0) {
+    progname = argv0;
     log_level = LEVEL_INFO;
     char *s = getenv("DRAINER_LOG_LEVEL");
     if(strlen(s) > 0) {

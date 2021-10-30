@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
                     &drain_type);
  
     // Init logging information
-    log_init();
+    log_init(argv[0]);
 
     // Set the draining method
     set_drain_type(drain_type);
