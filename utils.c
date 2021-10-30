@@ -14,7 +14,8 @@ void print_usage() {
             "\t\t-w num adios subsfiles per node\n"
             "\t\t-d draining method "
             "(1-coordinate flushing with computation, "
-            "2-independent draining)\n"
+            "2-independent draining, "
+            "3-posthoc draining)\n"
             "\t\t-m prefix to the nvm (e.g. /mnt/bb/<userid> on Summit)\n");
     fflush(stderr);
 }
@@ -100,9 +101,9 @@ int read_input_args(int argc, char **argv, int rank, int *num_sim_ranks,
             case 'd':
                 d = 1;
                 *drain_type = strtol(optarg, &size_mg, 10);
-                if(*drain_type != 1 && *drain_type !=2 ) {
+                if( (*drain_type < 1) || (*drain_type > 3) ) {
                     if (rank == 0)
-                        fprintf(stderr, "draining method must be 1 or 2.\n");
+                        fprintf(stderr, "draining method must be 1, 2, or 3.\n");
                     MPI_Abort(MPI_COMM_WORLD, 1);
                 }
                 break;
@@ -130,6 +131,7 @@ int read_input_args(int argc, char **argv, int rank, int *num_sim_ranks,
     if (rank == 0) {
         drain_type_str = "coordinated";
         if (*drain_type == 2) drain_type_str = "independent";
+        if (*drain_type == 3) drain_type_str = "posthoc";
 
         fprintf(stdout, "INPUT ARGS: "
                 "num_sim_ranks_on_node: %d, "

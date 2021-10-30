@@ -58,7 +58,8 @@ int _mainloop() {
 
     // Start flushing
     while( (nw_traffic_status() != EXIT_DONE) )
-        drain(mysubfiles, num_myfiles, transfersize);
+        if(drain_type != POSTHOC_DRAIN)
+            drain(mysubfiles, num_myfiles, transfersize);
 
     // Main app has exited. Flush remaining data.
     log_info("EXIT_DONE received\n");
@@ -68,6 +69,7 @@ int _mainloop() {
             transfersize = TWOGB;
             copy_status[omp_get_thread_num()] = 
                 copy_step(mysubfiles, num_myfiles, transfersize);
+            log_info("Copied %d bytes\n", copy_status[omp_get_thread_num()]);
         }
 
         allcopied = 1;

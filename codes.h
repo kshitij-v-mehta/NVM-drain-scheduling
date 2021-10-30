@@ -12,6 +12,9 @@
 #define MON_POLICY_STRICT  0
 #define MON_POLICY_RELAXED 1
 
+// Post hoc draining
+#define POSTHOC_DRAIN 3
+
 #define RED        0
 #define GREEN      1
 #define EXIT_DONE  -9
