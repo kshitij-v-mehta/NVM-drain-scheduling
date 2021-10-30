@@ -7,7 +7,7 @@ int get_grank();
 int get_lrank();
 int get_gsize();
 int get_lsize();
-char get_nodename();
+char* get_nodename();
 MPI_Comm get_lcomm();
 
 #endif
