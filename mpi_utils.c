@@ -7,7 +7,7 @@
 static int grank, lrank;
 static int gsize, lsize;
 static MPI_Comm localcomm;
-char nodename[MPI_MAX_PROCESSOR_NAME];
+static char nodename[MPI_MAX_PROCESSOR_NAME];
 
 
 int mpi_init(int argc, char** argv) {
