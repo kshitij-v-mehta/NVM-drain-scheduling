@@ -287,6 +287,7 @@ int assign_and_open_local_subfiles(char* adiosfname, subf_t** mysubfiles,
     MPI_Status status;
 
     // Distributes data files on the node amongst all ranks
+    *num_myfiles = 0;
     if(get_lrank() == 0)
         subfilenames = _root_distribute_subfiles(adiosfname, num_myfiles, fpn);
     else
