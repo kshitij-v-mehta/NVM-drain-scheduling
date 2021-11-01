@@ -12,17 +12,19 @@
 #include "logger.h"
 #include "draining.h"
 
-static int      num_sim_ranks;      // no. of simulation ranks to monitor
-static int      transfersize;       // bytes to copy from ssd->pfs in each call
-static int      monpolicy;          // monitoring policy id to implement
-static int      monpolicyarg=0;     // input arg to monitoring policy relaxed
-static char*    ad_fname = NULL;    // adios output file name
-static int      ad_nw = 0;          // no. of adios writers on the node
-static subf_t*  mysubfiles;         // list of subfiles assigned to this rank
-static int      num_myfiles;        // no. of subfiles assigned to me
-static int      num_threads;        // no. of threads in each drainer process
-static char     nvm_prefix[128];    // Path to the NVM. e.g. /mnt/bb/kmehta
-static int      drain_type;         // Coordinated or independent draining
+static int               num_sim_ranks;   // no. of simulation ranks to monitor
+static int               transfersize;    // bytes to copy from ssd->pfs in each call
+static int               monpolicy;       // monitoring policy id to implement
+static int               monpolicyarg=0;  // input arg to monitoring policy relaxed
+static char*             ad_fname = NULL; // adios output file name
+static int               ad_nw = 0;       // no. of adios writers on the node
+static subf_t*           mysubfiles;      // list of subfiles assigned to this rank
+static int               num_myfiles;     // no. of subfiles assigned to me
+static int               num_threads;     // no. of threads in each drainer process
+static char              nvm_prefix[128]; // Path to the NVM. e.g. /mnt/bb/kmehta
+static int               drain_type;      // Coordinated or independent draining
+static unsigned long int sleep_interval;  // Interval (useconds) between epochs
+static int               copyall;         // If all data must be copied every epoch
 
 #define TWOGB  2147483647
 
@@ -59,22 +61,16 @@ int _mainloop() {
     // Start flushing
     while( (nw_traffic_status() != EXIT_DONE) )
         if(drain_type != POSTHOC_DRAIN)
-            drain(mysubfiles, num_myfiles, transfersize);
+            drain(mysubfiles, num_myfiles, transfersize, copyall);
 
     // Main app has exited. Flush remaining data.
     log_info("EXIT_DONE received\n");
-    while(!allcopied) {
 #pragma omp parallel
-        {
-            transfersize = TWOGB;
-            copy_status[omp_get_thread_num()] = 
-                copy_step(mysubfiles, num_myfiles, transfersize);
-            log_info("Copied %d bytes\n", copy_status[omp_get_thread_num()]);
-        }
-
-        allcopied = 1;
-        for(i=0; i<nt; i++)
-            if (copy_status[i] != 0) allcopied = 0;
+    {
+        transfersize = TWOGB;
+        copy_status[omp_get_thread_num()] = 
+            copy_step(mysubfiles, num_myfiles, transfersize, 1);
+        log_info("Copied %d bytes\n", copy_status[omp_get_thread_num()]);
     }
 
     // Node-local roots look for and copy the adios metadata file
@@ -93,13 +89,13 @@ int main(int argc, char **argv) {
     // Read input args
     read_input_args(argc, argv, get_grank(), &num_sim_ranks, &transfersize, 
                     &monpolicy, &monpolicyarg, &ad_fname, &ad_nw, nvm_prefix,
-                    &drain_type);
+                    &drain_type, &sleep_interval, &copyall);
  
     // Init logging information
     log_init(argv[0]);
 
     // Set the draining method
-    set_drain_type(drain_type);
+    set_drain_type(drain_type, sleep_interval);
 
     // Initialize traffic monitor
     mon_init(num_sim_ranks, monpolicy, monpolicyarg);
@@ -138,7 +134,7 @@ cleanup:
  *  --- DONE --- Implement and select different draining methods
  *  Add options to setup continuous and periodic draining
  *  Add profile timers and option to log into separate files for ranks
- *  Clearly state the max. no. of subfiles allowed on a node
+ *  Document state the max. no. of subfiles 40 allowed on a node
  *  Write code to flush multiple bp files from a node
  *  Create public traffic status library
  *  Copy md.idx

@@ -14,7 +14,6 @@
 //TODO
 static char _nvm_prefix[128];
 
-
 /*
  * Return a list of data subfiles from the adios container represented
  * by dirpath

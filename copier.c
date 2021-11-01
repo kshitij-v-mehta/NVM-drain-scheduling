@@ -61,12 +61,13 @@ int _copy(int srcfd, int destfd, int transfersize, off_t offset) {
 
 /* 
  * A thread copies one transfersize amount of data from all of its subfiles
+ * if copyall==1, copy all data available in the file
  * This is called from an OpenMP region
  * nfp: total no. of subfiles for this mpi rank
  * Returns the number of bytes copied
  */
-int copy_step(subf_t* subf, int nfp, int transfersize) {
-    int i, n, index, stat=0;
+int copy_step(subf_t* subf, int nfp, int transfersize, int copyall) {
+    int i, n, index, stat=0, ret=0;
     int num_t= omp_get_num_threads();
     int t_id = omp_get_thread_num();
 
@@ -76,9 +77,19 @@ int copy_step(subf_t* subf, int nfp, int transfersize) {
 
     // Copy the first set of files
     for (i=index; i<(index+n); i++) {
-        log_debug("copying %s, fd: %d\n", subf[i].fname_ssd, subf[i].fd_in); 
-        stat = _copy(subf[i].fd_in, subf[i].fd_out, transfersize, subf[i].offset);
-        subf[i].offset += stat;
+        log_debug("copying %s, fd: %d\n", subf[i].fname_ssd, subf[i].fd_in);
+        if (copyall == 1) {
+            while(ret > 0) {
+                ret = _copy(subf[i].fd_in, subf[i].fd_out, transfersize, subf[i].offset);
+                stat += ret;
+                subf[i].offset += stat;
+            }
+        }
+        else {
+            ret = _copy(subf[i].fd_in, subf[i].fd_out, transfersize, subf[i].offset);
+            stat += ret;
+            subf[i].offset += stat;
+        }
     }
 
     // Copy leftover files if num files not exactly divisible by num threads

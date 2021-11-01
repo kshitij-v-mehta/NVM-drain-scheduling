@@ -16,20 +16,23 @@ void print_usage() {
             "(1-coordinate flushing with computation, "
             "2-independent draining, "
             "3-posthoc draining)\n"
-            "\t\t-m prefix to the nvm (e.g. /mnt/bb/<userid> on Summit)\n");
+            "\t\t-m prefix to the nvm (e.g. /mnt/bb/<userid> on Summit)\n, "
+            "\t\t-i microseconds between flush epochs, for independent draining\n, "
+            "\t\t-a 0/1. 1- flush all available data everytime\n");
     fflush(stderr);
 }
 
 
 int read_input_args(int argc, char **argv, int rank, int *num_sim_ranks, 
         int *transfersize, int *monpolicy, int *monparg, char** adfname,
-        int *ad_n, char* nvm_prefix, int* drain_type) {
+        int *ad_n, char* nvm_prefix, int* drain_type,
+        unsigned long int* sleep_interval, int *copyall) {
     
-    int c, n=0, t=0, p=0, s=0, f=0, w=0, m=0, d=0;
+    int c, n=0, t=0, p=0, s=0, f=0, w=0, m=0, d=0, i=0, a=0;
     char *size_mg;
     char* drain_type_str = NULL;
 
-    while ((c=getopt(argc, argv, "n:t:p:s:f:w:m:d:")) != -1)
+    while ((c=getopt(argc, argv, "n:t:p:s:f:w:m:d:i:a:")) != -1)
         switch(c) {
             case 'n':
                 n=1;
@@ -99,7 +102,7 @@ int read_input_args(int argc, char **argv, int rank, int *num_sim_ranks,
                 strcpy(nvm_prefix, optarg);
                 break;
             case 'd':
-                d = 1;
+                d=1;
                 *drain_type = strtol(optarg, &size_mg, 10);
                 if( (*drain_type < 1) || (*drain_type > 3) ) {
                     if (rank == 0)
@@ -107,13 +110,27 @@ int read_input_args(int argc, char **argv, int rank, int *num_sim_ranks,
                     MPI_Abort(MPI_COMM_WORLD, 1);
                 }
                 break;
+            case 'i':
+                i=1;
+                *sleep_interval = strtol(optarg, &size_mg, 10);
+                if(*sleep_interval == 0) {
+                    if(rank==0)
+                        fprintf(stderr, "Sleep interval between flush epochs"
+                                "cannot be 0: %uld\n");
+                    MPI_Abort(MPI_COMM_WORLD, 1);
+                }
+                break;
+            case 'a':
+                a=1;
+                *copyall = strtol(optarg, &size_mg, 10);
+                break;
             default:
                 print_usage();
                 MPI_Abort(MPI_COMM_WORLD, 1);
                 exit(1);
         }
 
-    if (!n || !t || !p || !s || !f || !w || !m || !d) {
+    if (!n || !t || !p || !s || !f || !w || !m || !d || !i || !a) {
         print_usage();
         MPI_Abort(MPI_COMM_WORLD, 1);
         exit(1);
@@ -133,17 +150,17 @@ int read_input_args(int argc, char **argv, int rank, int *num_sim_ranks,
         if (*drain_type == 2) drain_type_str = "independent";
         if (*drain_type == 3) drain_type_str = "posthoc";
 
-        fprintf(stdout, "INPUT ARGS: "
-                "num_sim_ranks_on_node: %d, "
-                "transfersize: %d, "
-                "monpolicy: %d, "
-                "monpolicyarg: %d, "
-                "adios_file: %s, "
-                "n_subfiles_per_node: %d, "
-                "nvm prefix: '%s', "
-                "draining method: %s\n", 
-                *num_sim_ranks, *transfersize, *monpolicy, *monparg,
-                *adfname, *ad_n, nvm_prefix, drain_type_str);
+        fprintf(stdout, "INPUT ARGS: ");
+        fprintf(stdout, "num_sim_ranks_on_node: %d, ", *num_sim_ranks);
+        fprintf(stdout, "transfersize: %d, ", *transfersize);
+        fprintf(stdout, "monpolicy: %d, ", *monpolicy);
+        fprintf(stdout, "monpolicyarg: %d, ", *monparg);
+        fprintf(stdout, "adios_file: %s, ", *adfname);
+        fprintf(stdout, "n_subfiles_per_node: %d, ", *ad_n);
+        fprintf(stdout, "nvm prefix: '%s', ", nvm_prefix);
+        fprintf(stdout, "draining method: %s, ", drain_type_str);
+        fprintf(stdout, "useconds between flushes for independent drain: %lu, ", *sleep_interval);
+        fprintf(stdout, "copy all new data everytime (1 for yes, no otherwise): %d\n", *copyall);
         fflush(stdout);
     }
 
