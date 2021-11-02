@@ -18,6 +18,7 @@ static int (*_drain) (subf_t*, int, int, int) = NULL;
 /*
  * Drain the NVM by coordinating draining with computation in the 
  * simulation.
+ * copyall must be 0 for coordinated draining.
  */
 int _coordinated_drain(subf_t* mysubfiles, int num_myfiles, int transfersize, int copyall) {
 
@@ -31,7 +32,7 @@ int _coordinated_drain(subf_t* mysubfiles, int num_myfiles, int transfersize, in
 
 #pragma omp parallel
         {
-            copy_step(mysubfiles, num_myfiles, transfersize, copyall);
+            copy_step(mysubfiles, num_myfiles, transfersize, 0);
         }
     }
     // To minimize logging outputs
