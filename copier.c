@@ -67,7 +67,7 @@ int _copy(int srcfd, int destfd, int transfersize, off_t offset) {
  * Returns the number of bytes copied
  */
 int copy_step(subf_t* subf, int nfp, int transfersize, int copyall) {
-    int i, n, index, stat=0, ret=0;
+    int i, n, index, stat=0, ret=1;
     int num_t= omp_get_num_threads();
     int t_id = omp_get_thread_num();
 
