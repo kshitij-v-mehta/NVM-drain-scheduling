@@ -52,6 +52,7 @@ int _coordinated_drain(subf_t* mysubfiles, int num_myfiles, int transfersize, in
 int _independent_drain(subf_t* mysubfiles, int num_myfiles, int transfersize, int copyall) {
     
     // Sleep for 10 milliseconds
+    log_debug("Sleeping for %lu useconds\n", _sleep_interval);
     usleep(_sleep_interval);
     copy_step(mysubfiles, num_myfiles, transfersize, copyall);
 
