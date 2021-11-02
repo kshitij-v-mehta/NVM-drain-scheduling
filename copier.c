@@ -77,7 +77,8 @@ int copy_step(subf_t* subf, int nfp, int transfersize, int copyall) {
 
     // Copy the first set of files
     for (i=index; i<(index+n); i++) {
-        log_debug("copying %s, fd: %d, copyall: %d\n", subf[i].fname_ssd, subf[i].fd_in, copyall);
+        log_debug("copying %s, fd: %d, transfersize: %d, copyall: %d\n",
+                subf[i].fname_ssd, subf[i].fd_in, transfersize, copyall);
         if (copyall == 1) {
             while(ret > 0) {
                 ret = _copy(subf[i].fd_in, subf[i].fd_out, transfersize, subf[i].offset);
