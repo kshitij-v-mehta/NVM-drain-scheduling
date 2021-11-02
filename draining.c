@@ -32,6 +32,8 @@ int _coordinated_drain(subf_t* mysubfiles, int num_myfiles, int transfersize, in
 
 #pragma omp parallel
         {
+            // pass 0 for copyall as we don't want to force copy everything,
+            // we only want to copy when traffic is green
             copy_step(mysubfiles, num_myfiles, transfersize, 0);
         }
     }
