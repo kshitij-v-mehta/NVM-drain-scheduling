@@ -67,6 +67,8 @@ int _copy(int srcfd, int destfd, int transfersize, off_t offset) {
  * Returns the number of bytes copied
  */
 int copy_step(subf_t* subf, int nfp, int transfersize, int copyall) {
+    // ret == no. of bytes copied in a single copy call
+    // stat == total no. of bytes copied in this function call
     int i, n, index, stat=0, ret=1;
     int num_t= omp_get_num_threads();
     int t_id = omp_get_thread_num();
@@ -82,14 +84,14 @@ int copy_step(subf_t* subf, int nfp, int transfersize, int copyall) {
         if (copyall == 1) {
             while(ret > 0) {
                 ret = _copy(subf[i].fd_in, subf[i].fd_out, transfersize, subf[i].offset);
+                subf[i].offset += ret;
                 stat += ret;
-                subf[i].offset += stat;
             }
         }
         else {
             ret = _copy(subf[i].fd_in, subf[i].fd_out, transfersize, subf[i].offset);
+            subf[i].offset += ret;
             stat += ret;
-            subf[i].offset += stat;
         }
     }
 
@@ -97,13 +99,13 @@ int copy_step(subf_t* subf, int nfp, int transfersize, int copyall) {
     i = t_id < (nfp%num_t);
     if(i) {
         index = n*num_t + t_id;
-        log_debug("copying %s, fd: %d\n", subf[index].fname_ssd,
-                subf[index].fd_in); 
-        stat = _copy(subf[index].fd_in, subf[index].fd_out, transfersize, 
-                subf[index].offset);
-        subf[index].offset += stat;
+        log_debug("copying %s, fd: %d\n", subf[index].fname_ssd, subf[index].fd_in); 
+        ret = _copy(subf[index].fd_in, subf[index].fd_out, transfersize, subf[index].offset);
+        subf[index].offset += ret;
+        stat += ret;
     }
 
+    // Return the total no. of bytes copied in this function
     return stat;
 }
 
