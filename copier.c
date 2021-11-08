@@ -66,10 +66,11 @@ int _copy(int srcfd, int destfd, int transfersize, off_t offset) {
  * nfp: total no. of subfiles for this mpi rank
  * Returns the number of bytes copied
  */
-int copy_step(subf_t* subf, int nfp, int transfersize, int copyall) {
+size_t copy_step(subf_t* subf, int nfp, int transfersize, int copyall) {
     // ret == no. of bytes copied in a single copy call
     // stat == total no. of bytes copied in this function call
-    int i, n, index, stat=0, ret=1;
+    int i, n, index, ret=1;
+    size_t stat=0;
     int num_t= omp_get_num_threads();
     int t_id = omp_get_thread_num();
 

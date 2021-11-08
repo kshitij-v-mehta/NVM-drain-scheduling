@@ -18,7 +18,7 @@ void print_usage() {
             "3-posthoc draining)\n"
             "\t\t-m prefix to the nvm (e.g. /mnt/bb/<userid> on Summit)\n, "
             "\t\t-i microseconds between flush epochs, for independent draining\n, "
-            "\t\t-a 0/1. 1- flush all available data everytime\n");
+            "\t\t-a 0/1. 1- flush all available data everytime (independent draining)\n");
     fflush(stderr);
 }
 

@@ -33,7 +33,7 @@ int _mainloop() {
     //trigger_check();
     //execute_
 
-    int *copy_status = NULL;
+    size_t *copy_status = NULL;
     int curState = RED;
     int allcopied = 0;
     char *sizemg;
@@ -43,7 +43,7 @@ int _mainloop() {
     nt = (int)strtol(getenv("OMP_NUM_THREADS"), &sizemg, 10);
 
     // Allocate array to hold the copy status for each thread
-    copy_status = (int*) malloc (nt*sizeof(int));
+    copy_status = (size_t*) malloc (nt*sizeof(int));
     if (NULL == copy_status) {
         perror("Could not alloc internal int array for threads. ABORTING.\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
@@ -70,7 +70,7 @@ int _mainloop() {
         transfersize = TWOGB;
         copy_status[omp_get_thread_num()] = 
             copy_step(mysubfiles, num_myfiles, transfersize, 1);
-        log_info("Copied %d bytes\n", copy_status[omp_get_thread_num()]);
+        log_info("Copied %lu bytes\n", copy_status[omp_get_thread_num()]);
     }
 
     // Node-local roots look for and copy the adios metadata file
@@ -132,6 +132,7 @@ cleanup:
  *  --- DONE --- Fix subfiles not being found if drainer launched too early
  *  --- DONE --- Remove hard-coded nvm prefix and take it as cmd line arg
  *  --- DONE --- Implement and select different draining methods
+ *  In copier, check wstat == rstat
  *  Add options to setup continuous and periodic draining
  *  Add profile timers and option to log into separate files for ranks
  *  Document state the max. no. of subfiles 40 allowed on a node
